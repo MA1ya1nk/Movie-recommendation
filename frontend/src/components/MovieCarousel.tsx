@@ -1,7 +1,4 @@
-import useEmblaCarousel from 'embla-carousel-react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useCallback } from 'react'
-import { Button } from '@/components/ui/button'
+import { Film } from 'lucide-react'
 import { MovieCard } from '@/components/MovieCard'
 import type { Movie, ScoredMovie } from '@/types/api'
 import { cn } from '@/lib/utils'
@@ -18,51 +15,63 @@ type Props = {
   items: CarouselRow[]
   scored?: boolean
   onPick?: (movie: Movie) => void
+  /** Shown when `items` is empty so the shelf still takes space and explains why. */
+  emptyHint?: string
 }
 
-export function MovieCarousel({ title, subtitle, items, scored = true, onPick }: Props) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ align: 'start', loop: false, dragFree: true })
+const defaultEmpty = 'Nothing to show here yet — check back after you explore more titles.'
 
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi])
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi])
-
-  if (!items.length) return null
+export function MovieCarousel({
+  title,
+  subtitle,
+  items,
+  scored = true,
+  onPick,
+  emptyHint = defaultEmpty,
+}: Props) {
+  const hasItems = items.length > 0
 
   return (
-    <section className="py-8">
-      <div className="mb-4 flex items-end justify-between gap-4 px-1">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight md:text-2xl">{title}</h2>
-          {subtitle && <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{subtitle}</p>}
+    <section className="py-6 sm:py-8">
+      <div className="mb-3 flex flex-col gap-3 sm:mb-4 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-semibold tracking-tight sm:text-xl md:text-2xl">{title}</h2>
+          {subtitle && (
+            <p className="mt-1 max-w-2xl text-pretty text-xs leading-relaxed text-muted-foreground sm:text-sm">{subtitle}</p>
+          )}
         </div>
-        <div className="hidden gap-2 sm:flex">
-          <Button type="button" variant="outline" size="icon" onClick={scrollPrev} aria-label="Previous">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button type="button" variant="outline" size="icon" onClick={scrollNext} aria-label="Next">
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        {hasItems && (
+          <p className="text-[11px] text-muted-foreground/80 sm:hidden">Swipe sideways for more</p>
+        )}
       </div>
 
-      <div className="carousel-mask overflow-hidden">
-        <div ref={emblaRef} className={cn('cursor-grab active:cursor-grabbing')}>
-          <div className="flex gap-4 pb-2">
+      {hasItems ? (
+        <div className="overflow-hidden">
+          <div
+            className={cn(
+              'carousel-mask no-scrollbar flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain pb-2 scroll-smooth sm:gap-4',
+              'touch-pan-x [-webkit-overflow-scrolling:touch]',
+            )}
+          >
             {items.map((row, i) => {
               const movie = rowMovie(row)
               const score = 'final_score' in row ? row.final_score : undefined
               return (
-                <MovieCard
-                  key={`${movie.id}-${i}`}
-                  movie={movie}
-                  score={scored ? score : undefined}
-                  onNavigate={() => onPick?.(movie)}
-                />
+                <div key={`${movie.id}-${i}`} data-carousel-slide className="snap-start snap-always shrink-0">
+                  <MovieCard movie={movie} score={scored ? score : undefined} onNavigate={() => onPick?.(movie)} />
+                </div>
               )
             })}
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex min-h-[140px] items-center gap-4 rounded-2xl border border-dashed border-white/15 bg-white/[0.03] px-5 py-8 sm:min-h-[160px] sm:px-6">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-muted-foreground">
+            <Film className="h-6 w-6" />
+          </span>
+          <p className="text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">{emptyHint}</p>
+        </div>
+      )}
     </section>
   )
 }

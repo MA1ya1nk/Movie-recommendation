@@ -15,8 +15,8 @@ export function AttributionBar({ content, collab, pop, mistral }: Props) {
   ]
 
   return (
-    <div className="space-y-2">
-      <div className="flex h-3 overflow-hidden rounded-full bg-white/10">
+    <div className="space-y-3">
+      <div className="flex h-3.5 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/5 sm:h-3">
         {segments.map((s) =>
           s.pct > 0 ? (
             <div
@@ -28,7 +28,7 @@ export function AttributionBar({ content, collab, pop, mistral }: Props) {
           ) : null,
         )}
       </div>
-      <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-muted-foreground sm:text-xs">
         {segments.map((s) => (
           <span key={s.label} className="inline-flex items-center gap-1">
             <span className={`h-2 w-2 rounded-full ${s.className}`} />

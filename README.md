@@ -33,10 +33,12 @@ Create `backend/.env` if you need Postgres, Mistral, or custom paths (see [Envir
 
 ```bash
 python manage.py migrate
-python manage.py seed_data
+python manage.py seed_data --reset   # recommended once: clears old catalog so titles are unique
 python manage.py generate_embeddings
 python manage.py runserver
 ```
+
+Re-run `seed_data` without flags to fill missing slots only (idempotent). Catalog titles are `"{Name} · #{tmdb_id}"` so no duplicate display names for seeded rows.
 
 API runs at **http://127.0.0.1:8000** (default).
 
@@ -70,7 +72,8 @@ Do not commit real `.env` files; they are listed in `.gitignore`.
 
 | Command | Description |
 |---------|-------------|
-| `python manage.py seed_data` | Seed genres, ~220 movies, synthetic users/ratings, A/B variants |
+| `python manage.py seed_data` | Idempotent: ~220 movies by `tmdb_id` 10000–10219, users/ratings, A/B variants |
+| `python manage.py seed_data --reset` | Wipes movies/ratings/genres (dev) then reseeds clean catalog |
 | `python manage.py generate_embeddings` | (Re)build Chroma embeddings for catalog titles |
 
 ## Repository layout

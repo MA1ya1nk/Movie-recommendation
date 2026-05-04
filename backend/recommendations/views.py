@@ -15,6 +15,10 @@ from recommendations.serializers import (
     NLPreferenceSerializer,
     ScoredMovieSerializer,
 )
+from recommendations.services.discovery_suggestions import (
+    genre_vocabulary_hint,
+    suggestions_for_discovery_user,
+)
 from recommendations.services.hybrid_engine import HybridRecommendationEngine
 from recommendations.services.mistral_client import MistralService
 
@@ -33,6 +37,7 @@ class FeedView(APIView):
             {
                 "mode": data["mode"],
                 "cold_start": data["mode"] == "cold_start",
+                "rating_count": data["rating_count"],
                 "for_you": pack(data["for_you"]),
                 "because_you_liked": pack(data["because_liked"]),
                 "users_like_you": pack(data["users_like_you"]),
@@ -77,13 +82,16 @@ class ProfileSummaryView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from engagement.models import Rating
+        from engagement.models import Favorite, Rating
 
         user = request.user
         ratings = Rating.objects.filter(user=user).select_related("movie")
         genre_counts = {}
         for r in ratings:
             for g in r.movie.genres.all():
+                genre_counts[g.name] = genre_counts.get(g.name, 0) + 1
+        for fav in Favorite.objects.filter(user=user).select_related("movie"):
+            for g in fav.movie.genres.all():
                 genre_counts[g.name] = genre_counts.get(g.name, 0) + 1
 
         snapshots = TasteEvolutionSnapshot.objects.filter(user=user).order_by("created_at")[:24]
@@ -110,12 +118,12 @@ class DiscoveryChatView(APIView):
         ser = DiscoveryChatSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
         mistral = MistralService()
-        sample = (
-            Movie.objects.order_by("-popularity_score")
-            .values_list("title", "summary")[:15]
-        )
-        hint = "\n".join(f"- {t}: {s[:80]}" for t, s in sample)
+        hint = genre_vocabulary_hint()
         result = mistral.discovery_chat_turn(ser.validated_data["messages"], hint)
+        if isinstance(result, dict) and result.get("done") and result.get("summary"):
+            out = dict(result)
+            out["suggestions"] = suggestions_for_discovery_user(request.user, out)
+            return Response(out)
         return Response(result)
 
 

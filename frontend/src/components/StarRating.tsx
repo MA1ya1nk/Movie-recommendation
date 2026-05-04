@@ -9,7 +9,7 @@ type Props = {
 
 export function StarRating({ value, onChange, disabled }: Props) {
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-wrap items-center gap-0.5 sm:gap-1">
       {[1, 2, 3, 4, 5].map((s) => (
         <button
           key={s}
@@ -17,12 +17,12 @@ export function StarRating({ value, onChange, disabled }: Props) {
           disabled={disabled}
           onClick={() => onChange?.(s)}
           className={cn(
-            'rounded-md p-1 transition hover:scale-110 disabled:cursor-default',
+            '-m-0.5 min-h-[44px] min-w-[44px] touch-manipulation rounded-lg p-2 transition active:scale-95 disabled:cursor-default sm:min-h-0 sm:min-w-0 sm:p-1 sm:hover:scale-110',
             s <= value ? 'text-amber-400' : 'text-zinc-600',
           )}
           aria-label={`Rate ${s} stars`}
         >
-          <Star className={cn('h-8 w-8', s <= value && 'fill-current')} />
+          <Star className={cn('h-9 w-9 sm:h-8 sm:w-8', s <= value && 'fill-current')} />
         </button>
       ))}
     </div>

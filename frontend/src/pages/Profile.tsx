@@ -51,25 +51,28 @@ export function ProfilePage() {
   if (!token) return <Navigate to="/login" replace />
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 px-4 py-8">
+    <div className="page-gutter mx-auto max-w-7xl space-y-8 py-6 sm:space-y-10 sm:py-8">
       <div>
-        <h1 className="text-3xl font-bold">Your taste studio</h1>
-        <p className="mt-2 text-muted-foreground">Genre radar, Mistral taste snapshots every 5 ratings, and NL preference extraction.</p>
+        <h1 className="text-balance text-2xl font-bold tracking-tight sm:text-3xl">Your taste studio</h1>
+        <p className="mt-2 max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Genre radar, Mistral taste snapshots every 5 ratings, and NL preference extraction.
+        </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Natural-language preferences</CardTitle>
+      <Card className="overflow-hidden shadow-lg ring-1 ring-white/5">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-base sm:text-lg">Natural-language preferences</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row">
+        <CardContent className="flex flex-col gap-3 p-4 pt-0 sm:flex-row sm:p-6 sm:pt-0">
           <Input
             placeholder="Describe mood, characters, themes…"
             value={prefsText}
             onChange={(e) => setPrefsText(e.target.value)}
-            className="flex-1"
+            className="min-h-11 flex-1 text-base sm:min-h-10 sm:text-sm"
           />
           <Button
             type="button"
+            className="h-11 w-full shrink-0 touch-manipulation sm:h-10 sm:w-auto"
             onClick={async () => {
               await api.nlPreferences(prefsText)
               const p = await api.fetchProfile()
@@ -81,12 +84,12 @@ export function ProfilePage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <Card className="min-h-[360px]">
-          <CardHeader>
-            <CardTitle>Genre map</CardTitle>
+      <div className="grid gap-6 sm:gap-8 lg:grid-cols-2">
+        <Card className="min-h-[300px] overflow-hidden shadow-lg ring-1 ring-white/5 sm:min-h-[360px]">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">Genre map</CardTitle>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[260px] p-2 sm:h-[300px] sm:p-4 sm:pt-0">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
                 <PolarGrid stroke="rgba(255,255,255,0.15)" />
@@ -98,11 +101,11 @@ export function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Card className="min-h-[360px]">
-          <CardHeader>
-            <CardTitle>Taste evolution</CardTitle>
+        <Card className="min-h-[300px] overflow-hidden shadow-lg ring-1 ring-white/5 sm:min-h-[360px]">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">Taste evolution</CardTitle>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[260px] p-2 sm:h-[300px] sm:p-4 sm:pt-0">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={evolutionData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
@@ -119,18 +122,20 @@ export function ProfilePage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Snapshots</CardTitle>
+      <Card className="shadow-lg ring-1 ring-white/5">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-base sm:text-lg">Snapshots</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 p-4 pt-0 sm:space-y-4 sm:p-6 sm:pt-0">
           {(profile?.taste_evolution.length ?? 0) === 0 && (
-            <p className="text-sm text-muted-foreground">Rate movies — every 5 ratings we ask Mistral to summarize how your taste is evolving.</p>
+            <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
+              Rate movies — every 5 ratings we ask Mistral to summarize how your taste is evolving.
+            </p>
           )}
           {profile?.taste_evolution.map((s) => (
-            <div key={s.at} className="rounded-lg border border-white/10 bg-white/5 p-4">
+            <div key={s.at} className="rounded-xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
               <p className="text-xs text-muted-foreground">{new Date(s.at).toLocaleString()}</p>
-              <p className="mt-2 text-sm leading-relaxed">{s.summary}</p>
+              <p className="mt-2 text-sm leading-relaxed sm:text-[15px]">{s.summary}</p>
             </div>
           ))}
         </CardContent>

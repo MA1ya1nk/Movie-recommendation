@@ -39,6 +39,56 @@ class UserProfile(models.Model):
         return f"Profile<{self.user_id}>"
 
 
+class Favorite(models.Model):
+    """Explicit positive signal (independent of star rating). Used as Chroma seeds with 4★+ ratings."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="favorites",
+    )
+    movie = models.ForeignKey(
+        "catalog.Movie",
+        on_delete=models.CASCADE,
+        related_name="favorited_by",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "movie"], name="uniq_user_movie_favorite"),
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"fav:{self.user_id}:{self.movie_id}"
+
+
+class NotInterested(models.Model):
+    """Hard exclude from recommendations (and discovery picks) for this user."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="not_interested",
+    )
+    movie = models.ForeignKey(
+        "catalog.Movie",
+        on_delete=models.CASCADE,
+        related_name="dismissed_by",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "movie"], name="uniq_user_movie_not_interested"),
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"ni:{self.user_id}:{self.movie_id}"
+
+
 class Rating(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from engagement.models import ABVariant, Interaction, Rating, TasteEvolutionSnapshot, UserProfile
+from engagement.models import (
+    ABVariant,
+    Favorite,
+    Interaction,
+    NotInterested,
+    Rating,
+    TasteEvolutionSnapshot,
+    UserProfile,
+)
 
 
 @admin.register(ABVariant)
@@ -12,6 +20,18 @@ class ABVariantAdmin(admin.ModelAdmin):
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ("user", "ab_variant")
     raw_id_fields = ("user",)
+
+
+@admin.register(Favorite)
+class FavoriteAdmin(admin.ModelAdmin):
+    list_display = ("user", "movie", "created_at")
+    raw_id_fields = ("user", "movie")
+
+
+@admin.register(NotInterested)
+class NotInterestedAdmin(admin.ModelAdmin):
+    list_display = ("user", "movie", "created_at")
+    raw_id_fields = ("user", "movie")
 
 
 @admin.register(Rating)

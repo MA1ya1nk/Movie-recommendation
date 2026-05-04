@@ -3,7 +3,7 @@ from rest_framework import serializers
 
 from catalog.models import Movie
 from catalog.serializers import MovieListSerializer
-from engagement.models import Interaction, Rating
+from engagement.models import Favorite, Interaction, NotInterested, Rating
 
 
 class RatingSerializer(serializers.ModelSerializer):
@@ -30,6 +30,42 @@ class RatingSerializer(serializers.ModelSerializer):
             defaults={"stars": validated_data["stars"]},
         )
         return rating
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    movie_slug = serializers.SlugField(write_only=True)
+    movie = MovieListSerializer(read_only=True)
+
+    class Meta:
+        model = Favorite
+        fields = ("id", "movie_slug", "movie", "created_at")
+        read_only_fields = ("id", "movie", "created_at")
+
+    def create(self, validated_data):
+        slug = validated_data.pop("movie_slug")
+        movie = get_object_or_404(Movie, slug=slug)
+        user = self.context["request"].user
+        NotInterested.objects.filter(user=user, movie=movie).delete()
+        fav, _ = Favorite.objects.get_or_create(user=user, movie=movie)
+        return Favorite.objects.select_related("movie").get(pk=fav.pk)
+
+
+class NotInterestedSerializer(serializers.ModelSerializer):
+    movie_slug = serializers.SlugField(write_only=True)
+    movie = MovieListSerializer(read_only=True)
+
+    class Meta:
+        model = NotInterested
+        fields = ("id", "movie_slug", "movie", "created_at")
+        read_only_fields = ("id", "movie", "created_at")
+
+    def create(self, validated_data):
+        slug = validated_data.pop("movie_slug")
+        movie = get_object_or_404(Movie, slug=slug)
+        user = self.context["request"].user
+        Favorite.objects.filter(user=user, movie=movie).delete()
+        row, _ = NotInterested.objects.get_or_create(user=user, movie=movie)
+        return NotInterested.objects.select_related("movie").get(pk=row.pk)
 
 
 class InteractionSerializer(serializers.ModelSerializer):

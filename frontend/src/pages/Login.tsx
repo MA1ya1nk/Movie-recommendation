@@ -29,12 +29,12 @@ export function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-16">
-      <Card className="border-white/10 bg-black/40">
-        <CardHeader>
-          <CardTitle>{mode === 'login' ? 'Welcome back' : 'Create account'}</CardTitle>
+    <div className="page-gutter mx-auto flex w-full max-w-lg flex-col gap-6 py-10 sm:py-16">
+      <Card className="border-white/10 bg-black/50 shadow-2xl shadow-black/40 ring-1 ring-white/10 backdrop-blur-sm">
+        <CardHeader className="space-y-1 p-5 sm:p-6">
+          <CardTitle className="text-xl sm:text-2xl">{mode === 'login' ? 'Welcome back' : 'Create account'}</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-5 pt-0 sm:p-6 sm:pt-0">
           <form className="space-y-4" onSubmit={submit}>
             <div className="space-y-2">
               <label className="text-sm text-muted-foreground" htmlFor="email">
@@ -56,13 +56,13 @@ export function LoginPage() {
               />
             </div>
             {error && <p className="text-sm text-red-400">{error}</p>}
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="h-11 w-full touch-manipulation text-base sm:h-10 sm:text-sm">
               {mode === 'login' ? 'Sign in' : 'Register'}
             </Button>
           </form>
           <button
             type="button"
-            className="mt-4 w-full text-center text-sm text-muted-foreground underline"
+            className="mt-4 min-h-11 w-full touch-manipulation rounded-lg py-2 text-center text-sm text-muted-foreground underline-offset-4 hover:text-white hover:underline"
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
           >
             {mode === 'login' ? 'Need an account?' : 'Already registered?'}

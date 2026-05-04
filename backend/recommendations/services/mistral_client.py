@@ -99,21 +99,63 @@ class MistralService:
     def discovery_chat_turn(
         self,
         history: list[dict[str, str]],
-        catalog_hint: str,
+        genre_catalog_hint: str,
     ) -> dict[str, Any]:
         system = (
-            "You help users discover movies. Ask 2-3 short clarifying questions total across the conversation. "
-            "When you have enough signal, reply with JSON ONLY: "
-            '{"done":true,"summary":"...","suggested_genres":[],"avoid":[]} '
-            "Otherwise reply with plain text (questions)."
+            "You help users discover movies. Ask at most 2 short clarifying questions across the whole chat. "
+            "When you have enough signal, reply with JSON ONLY (no markdown, no prose outside JSON): "
+            '{"done":true,"summary":"one-sentence recap of what they want","suggested_genres":["Horror","Thriller"],'
+            '"avoid":[]} '
+            "Rules: suggested_genres MUST be taken only from the user's messages (what they said they want), "
+            "using the exact genre labels from the vocabulary line when possible (1–4 labels, most specific first). "
+            "Never invent genres from unrelated examples. If they asked for horror, include Horror (not Romance/Comedy/Crime unless they asked). "
+            "avoid: optional list of genre labels or traits to steer away from (only if the user said so); use [] if none. "
+            "Otherwise reply with plain text (one short follow-up question)."
         )
         msgs = "\n".join(f'{m["role"]}: {m["content"]}' for m in history[-12:])
-        user = f"Conversation:\n{msgs}\n\nCatalog snapshot:\n{catalog_hint[:800]}"
-        raw = self._chat(system, user, temperature=0.45)
+        user = f"Conversation:\n{msgs}\n\n{genre_catalog_hint[:1200]}"
+        raw = self._chat(system, user, temperature=0.22)
         parsed = self._parse_json(raw)
         if parsed and parsed.get("done"):
             return parsed
         return {"done": False, "message": raw or "What mood are you in tonight?"}
+
+    def _scores_chunk_json(
+        self,
+        user_context: str,
+        chunk: list[tuple[str, str]],
+    ) -> list[float]:
+        """One LLM round-trip for many titles; avoids N sequential API calls per rail."""
+        if not chunk:
+            return []
+        system = (
+            "Score how well each movie fits the user's taste from 0 to 10. "
+            'Reply with ONLY valid JSON: {"scores":[n1,n2,...]} — one number per movie '
+            "in order, same length as the numbered list."
+        )
+        lines = []
+        for idx, (title, summary) in enumerate(chunk):
+            safe = (summary or "")[:240].replace("\n", " ")
+            lines.append(f"{idx}. {title}: {safe}")
+        user = (
+            f"User context:\n{user_context[:1100]}\n\n"
+            "Movies (score each 0-10 in order):\n" + "\n".join(lines)
+        )
+        raw = self._chat(system, user, temperature=0.12)
+        parsed = self._parse_json(raw)
+        if not parsed:
+            return [0.55] * len(chunk)
+        arr = parsed.get("scores")
+        if not isinstance(arr, list):
+            return [0.55] * len(chunk)
+        out: list[float] = []
+        for i in range(len(chunk)):
+            try:
+                val = float(arr[i]) if i < len(arr) else 0.55
+                out.append(max(0.0, min(1.0, val / 10.0)))
+            except (TypeError, ValueError):
+                out.append(0.55)
+        return out
 
     def batch_relevance_scores(
         self,
@@ -122,12 +164,22 @@ class MistralService:
     ) -> list[float]:
         if not self.api_key or not items:
             return [0.55] * len(items)
-        scores: list[float] = []
-        for title, summary in items[:30]:
-            scores.append(self.relevance_score(user_context, title, summary))
-        while len(scores) < len(items):
-            scores.append(0.55)
-        return scores[: len(items)]
+        n = len(items)
+        # Scoring every candidate with a separate API call made /feed/ take minutes and
+        # time out the SPA. Score a fixed head via batched JSON; tail uses neutral prior.
+        head_cap = 28
+        chunk_sz = 14
+        scores = [0.55] * n
+        head = items[: min(n, head_cap)]
+        offset = 0
+        for i in range(0, len(head), chunk_sz):
+            block = head[i : i + chunk_sz]
+            part = self._scores_chunk_json(user_context, block)
+            for j, sc in enumerate(part):
+                if offset + j < len(scores):
+                    scores[offset + j] = sc
+            offset += len(block)
+        return scores
 
     @staticmethod
     def _parse_json(text: str) -> dict[str, Any] | None:

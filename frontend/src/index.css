@@ -20,6 +20,7 @@
 body {
   @apply bg-background text-foreground antialiased min-h-screen;
   font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-tap-highlight-color: transparent;
 }
 
 .glass {
@@ -27,5 +28,44 @@ body {
 }
 
 .carousel-mask {
-  mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent);
+  mask-image: linear-gradient(90deg, transparent, black 2%, black 98%, transparent);
+}
+
+@layer utilities {
+  .safe-pt {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .safe-pb {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Single source for horizontal inset: min padding + notch (do not combine with px-* on same node) */
+  .page-gutter {
+    padding-left: max(1.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1.75rem, env(safe-area-inset-right, 0px));
+  }
+  @media (min-width: 640px) {
+    .page-gutter {
+      padding-left: max(2rem, env(safe-area-inset-left, 0px));
+      padding-right: max(2rem, env(safe-area-inset-right, 0px));
+    }
+  }
+  @media (min-width: 768px) {
+    .page-gutter {
+      padding-left: max(2.25rem, env(safe-area-inset-left, 0px));
+      padding-right: max(2.25rem, env(safe-area-inset-right, 0px));
+    }
+  }
+  @media (min-width: 1024px) {
+    .page-gutter {
+      padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }

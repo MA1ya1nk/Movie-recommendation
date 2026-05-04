@@ -12,6 +12,17 @@ def distinct_genre_count(movies: Iterable[Movie]) -> int:
     return len(ids)
 
 
+def _dedupe_ranked_preserve_order(ranked: list[tuple[Movie, float]]) -> list[tuple[Movie, float]]:
+    seen: set[int] = set()
+    out: list[tuple[Movie, float]] = []
+    for movie, score in ranked:
+        if movie.pk in seen:
+            continue
+        seen.add(movie.pk)
+        out.append((movie, score))
+    return out
+
+
 def apply_diversity_filter(
     ranked: list[tuple[Movie, float]],
     top_n: int = 10,
@@ -19,6 +30,7 @@ def apply_diversity_filter(
     pool_multiplier: int = 5,
 ) -> list[tuple[Movie, float]]:
     """Reorder candidates so top_n tends to cover at least `min_genres` genres."""
+    ranked = _dedupe_ranked_preserve_order(ranked)
     if len(ranked) <= top_n:
         return ranked
     pool = list(ranked[: max(top_n * pool_multiplier, top_n + 25)])

@@ -101,13 +101,15 @@ class ChromaMovieStore:
         else:
             return []
         out: list[tuple[int, float]] = []
+        seen_mid: set[int] = set()
         ids = res.get("ids", [[]])[0]
         dists = res.get("distances", [[]])[0]
         for sid, d in zip(ids, dists):
             meta = self._collection.get(ids=[sid], include=["metadatas"])["metadatas"]
             mid = int(meta[0].get("movie_id", sid)) if meta else int(sid)
-            if mid in exclude:
+            if mid in exclude or mid in seen_mid:
                 continue
+            seen_mid.add(mid)
             sim = 1.0 - float(d)
             out.append((mid, max(0.0, min(1.0, sim))))
             if len(out) >= top_k:

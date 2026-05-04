@@ -10,9 +10,9 @@ import { ProfilePage } from '@/pages/Profile'
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(225,29,72,0.15),transparent_50%),radial-gradient(ellipse_at_bottom,_rgba(56,189,248,0.12),transparent_45%),#050816]">
+    <div className="min-h-screen min-h-[100dvh] bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(225,29,72,0.18),transparent_55%),radial-gradient(ellipse_100%_60%_at_50%_120%,rgba(56,189,248,0.14),transparent_50%),radial-gradient(ellipse_at_100%_0%,rgba(139,92,246,0.08),transparent_40%),#050816]">
       <Navbar />
-      <main>{children}</main>
+      <main className="safe-pb">{children}</main>
     </div>
   )
 }

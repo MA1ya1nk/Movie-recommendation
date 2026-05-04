@@ -1,5 +1,11 @@
 import axios from 'axios'
-import type { ExplainResponse, FeedResponse, Movie, ProfileResponse } from '@/types/api'
+import type {
+  ExplainResponse,
+  FeedResponse,
+  Movie,
+  MovieEngagementState,
+  ProfileResponse,
+} from '@/types/api'
 
 const api = axios.create({
   baseURL: '/api',
@@ -34,7 +40,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function fetchFeed() {
-  const { data } = await api.get<FeedResponse>('/feed/')
+  const { data } = await api.get<FeedResponse>('/feed/', { timeout: 180_000 })
   return data
 }
 
@@ -51,6 +57,27 @@ export async function fetchMovieExplain(slug: string) {
 export async function submitRating(movieSlug: string, stars: number) {
   const { data } = await api.post('/engagement/ratings/', { movie_slug: movieSlug, stars })
   return data
+}
+
+export async function fetchMovieEngagementState(slug: string) {
+  const { data } = await api.get<MovieEngagementState>(`/engagement/state/${encodeURIComponent(slug)}/`)
+  return data
+}
+
+export async function addFavorite(movieSlug: string) {
+  await api.post('/engagement/favorites/', { movie_slug: movieSlug })
+}
+
+export async function removeFavorite(movieSlug: string) {
+  await api.delete(`/engagement/favorites/${encodeURIComponent(movieSlug)}/`)
+}
+
+export async function addNotInterested(movieSlug: string) {
+  await api.post('/engagement/not-interested/', { movie_slug: movieSlug })
+}
+
+export async function removeNotInterested(movieSlug: string) {
+  await api.delete(`/engagement/not-interested/${encodeURIComponent(movieSlug)}/`)
 }
 
 export async function trackInteraction(movieId: number, event_type: 'impression' | 'click') {
@@ -80,14 +107,23 @@ export async function nlPreferences(text: string) {
   return data as { preferences: Record<string, unknown> }
 }
 
+export type DiscoveryChatResponse = {
+  done?: boolean
+  message?: string
+  summary?: string
+  suggested_genres?: string[]
+  avoid?: string[]
+  suggestions?: Movie[]
+}
+
 export async function discoveryChat(messages: { role: string; content: string }[]) {
-  const { data } = await api.post<{ done?: boolean; message?: string; summary?: string }>('/chat/discovery/', {
+  const { data } = await api.post<DiscoveryChatResponse>('/chat/discovery/', {
     messages,
   })
   return data
 }
 
 export async function listMovies(page = 1) {
-  const { data } = await api.get<{ results?: Movie[] }>(`/catalog/movies/?page=${page}`)
+  const { data } = await api.get<{ results?: Movie[] }>(`/catalog/movies/?page=${page}`, { timeout: 60_000 })
   return Array.isArray(data.results) ? data.results : []
 }

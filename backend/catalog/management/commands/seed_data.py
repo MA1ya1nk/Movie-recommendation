@@ -11,7 +11,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from catalog.models import Genre, Movie
-from engagement.models import ABVariant, Rating
+from engagement.models import ABVariant, Favorite, NotInterested, Rating
 
 User = get_user_model()
 
@@ -140,6 +140,8 @@ class Command(BaseCommand):
         if options["reset"]:
             self.stdout.write(self.style.WARNING("Resetting movie/rating data…"))
             Rating.objects.all().delete()
+            Favorite.objects.all().delete()
+            NotInterested.objects.all().delete()
             Movie.objects.all().delete()
             Genre.objects.all().delete()
             User.objects.filter(email__endswith="@seed.local").delete()
@@ -183,12 +185,18 @@ class Command(BaseCommand):
         return genres
 
     def _seed_movies(self, genres, rng: random.Random):
+        """Seed 220 catalog slots (tmdb_id 10000–10219). Titles are unique per slot; re-runs skip existing rows."""
         today = timezone.now().date()
-        movies = []
+        movies: list[Movie] = []
         for i in range(220):
-            title = f"{rng.choice(TITLE_A)} {rng.choice(TITLE_B)}"
-            if Movie.objects.filter(title=title).exists():
-                title = f"{title} ({i})"
+            catalog_id = 10_000 + i
+            existing = Movie.objects.filter(tmdb_id=catalog_id).first()
+            if existing is not None:
+                movies.append(existing)
+                continue
+
+            base = f"{rng.choice(TITLE_A)} {rng.choice(TITLE_B)}"
+            title = f"{base} · #{catalog_id}"
             director = f"{rng.choice(FIRST_NAMES)} {rng.choice(LAST_NAMES)}"
             cast = [
                 f"{rng.choice(FIRST_NAMES)} {rng.choice(LAST_NAMES)}",
@@ -208,7 +216,7 @@ class Command(BaseCommand):
             created = timezone.now() - timedelta(days=rng.randint(1, 30) if fresh_days else rng.randint(8, 120))
 
             m = Movie.objects.create(
-                tmdb_id=10_000 + i,
+                tmdb_id=catalog_id,
                 title=title,
                 director=director,
                 cast=cast,
@@ -223,7 +231,7 @@ class Command(BaseCommand):
             m.genres.set(pick)
             movies.append(m)
 
-        self.stdout.write(f"Created {len(movies)} movies.")
+        self.stdout.write(f"Catalog movies: {len(movies)} (created missing slots or reused existing by tmdb_id).")
         return movies
 
     def _seed_users_and_ratings(self, movies: list[Movie], rng: random.Random):
