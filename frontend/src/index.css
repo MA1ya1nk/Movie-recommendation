@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 222 47% 6%;
+  --foreground: 210 40% 98%;
+  --card: 222 40% 10%;
+  --card-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --primary: 358 75% 51%;
+  --primary-foreground: 0 0% 100%;
+  --accent: 217 91% 60%;
+  --accent-foreground: 222 47% 6%;
+  --border: 217 33% 18%;
+  --radius: 0.65rem;
+}
+
+body {
+  @apply bg-background text-foreground antialiased min-h-screen;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+.glass {
+  @apply bg-black/40 backdrop-blur-xl border border-white/10;
+}
+
+.carousel-mask {
+  mask-image: linear-gradient(90deg, transparent, black 4%, black 96%, transparent);
+}
