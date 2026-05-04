@@ -69,9 +69,6 @@ export function LoginPage() {
           </button>
         </CardContent>
       </Card>
-      <p className="text-center text-xs text-muted-foreground">
-        Token auth — email is your username. Set <code className="rounded bg-white/10 px-1">MISTRAL_API_KEY</code> for LLM features.
-      </p>
       <p className="text-center text-sm">
         <Link to="/" className="text-accent underline-offset-4 hover:underline">
           Back to home

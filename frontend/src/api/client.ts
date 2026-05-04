@@ -1,10 +1,14 @@
 import axios from 'axios'
 import type {
   ExplainResponse,
+  FavoriteRow,
   FeedResponse,
   Movie,
   MovieEngagementState,
+  NotInterestedRow,
+  Paginated,
   ProfileResponse,
+  RatingRow,
 } from '@/types/api'
 
 const api = axios.create({
@@ -78,6 +82,23 @@ export async function addNotInterested(movieSlug: string) {
 
 export async function removeNotInterested(movieSlug: string) {
   await api.delete(`/engagement/not-interested/${encodeURIComponent(movieSlug)}/`)
+}
+
+export async function fetchFavoritesPage(page = 1) {
+  const { data } = await api.get<Paginated<FavoriteRow>>(`/engagement/favorites/?page=${page}`)
+  return data
+}
+
+export async function fetchNotInterestedPage(page = 1) {
+  const { data } = await api.get<Paginated<NotInterestedRow>>(`/engagement/not-interested/?page=${page}`)
+  return data
+}
+
+export async function fetchRatingsPage(page = 1, stars?: number) {
+  const params = new URLSearchParams({ page: String(page) })
+  if (stars != null) params.set('stars', String(stars))
+  const { data } = await api.get<Paginated<RatingRow>>(`/engagement/ratings/?${params.toString()}`)
+  return data
 }
 
 export async function trackInteraction(movieId: number, event_type: 'impression' | 'click') {

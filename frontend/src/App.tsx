@@ -6,6 +6,7 @@ import { DiscoverChatPage } from '@/pages/DiscoverChat'
 import { HomePage } from '@/pages/Home'
 import { LoginPage } from '@/pages/Login'
 import { MovieDetailPage } from '@/pages/MovieDetail'
+import { MyListsPage } from '@/pages/MyLists'
 import { ProfilePage } from '@/pages/Profile'
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,7 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/movie/:slug" element={<MovieDetailPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/my-lists" element={<MyListsPage />} />
             <Route path="/discover" element={<DiscoverChatPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />

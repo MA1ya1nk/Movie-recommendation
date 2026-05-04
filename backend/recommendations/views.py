@@ -1,7 +1,6 @@
+from django.core.cache import cache
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
-from rest_framework import status
-from rest_framework.authtoken.views import obtain_auth_token
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -23,28 +22,37 @@ from recommendations.services.hybrid_engine import HybridRecommendationEngine
 from recommendations.services.mistral_client import MistralService
 
 
+def _feed_cache_key(user_id: int) -> str:
+    return f"feed:v3:user:{user_id}"
+
+
 class FeedView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        cache_key = _feed_cache_key(request.user.id)
+        cached = cache.get(cache_key)
+        if isinstance(cached, dict):
+            return Response(cached)
+
         engine = HybridRecommendationEngine()
         data = engine.recommendations_for_feed(request.user)
 
         def pack(rows):
             return [ScoredMovieSerializer.from_scored(x) for x in rows]
 
-        return Response(
-            {
-                "mode": data["mode"],
-                "cold_start": data["mode"] == "cold_start",
-                "rating_count": data["rating_count"],
-                "for_you": pack(data["for_you"]),
-                "because_you_liked": pack(data["because_liked"]),
-                "users_like_you": pack(data["users_like_you"]),
-                "hidden_gems": pack(data["hidden_gems"]),
-                "expand_your_horizons": pack(data["expand"]),
-            }
-        )
+        payload = {
+            "mode": data["mode"],
+            "cold_start": data["mode"] == "cold_start",
+            "rating_count": data["rating_count"],
+            "for_you": pack(data["for_you"]),
+            "because_you_liked": pack(data["because_liked"]),
+            "users_like_you": pack(data["users_like_you"]),
+            "hidden_gems": pack(data["hidden_gems"]),
+            "expand_your_horizons": pack(data["expand"]),
+        }
+        cache.set(cache_key, payload, timeout=60)
+        return Response(payload)
 
 
 class MovieExplainView(APIView):
@@ -131,7 +139,7 @@ class ABMetricsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        """Simple CTR & engagement proxy for A/B variants (admin-style)."""
+        """Simple CTR and engagement proxy for A/B variants (admin-style)."""
         qs = Interaction.objects.all()
         variants = qs.values("ab_variant_key").annotate(
             impressions=Count("id", filter=Q(event_type=Interaction.IMPRESSION)),

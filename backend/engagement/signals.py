@@ -1,11 +1,20 @@
-from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
+﻿from django.contrib.auth import get_user_model
+from django.core.cache import cache
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from engagement.models import ABVariant, Rating, TasteEvolutionSnapshot, UserProfile
+from engagement.models import ABVariant, Favorite, NotInterested, Rating, TasteEvolutionSnapshot, UserProfile
 from recommendations.services.mistral_client import MistralService
 
 User = get_user_model()
+
+
+def _feed_cache_key(user_id: int) -> str:
+    return f"feed:v3:user:{user_id}"
+
+
+def _invalidate_feed_cache_for_user(user_id: int) -> None:
+    cache.delete(_feed_cache_key(user_id))
 
 
 @receiver(post_save, sender=User)
@@ -22,6 +31,7 @@ def create_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Rating)
 def taste_evolution_snapshot(sender, instance, **kwargs):
     user = instance.user
+    _invalidate_feed_cache_for_user(user.id)
     count = Rating.objects.filter(user=user).count()
     if count % 5 != 0:
         return
@@ -30,7 +40,7 @@ def taste_evolution_snapshot(sender, instance, **kwargs):
     ).exists():
         return
     ratings = Rating.objects.filter(user=user).select_related("movie").order_by("-created_at")[:40]
-    lines = [f"{r.movie.title}: {r.stars}★ — {r.movie.summary[:120]}" for r in ratings]
+    lines = [f"{r.movie.title}: {r.stars} stars - {r.movie.summary[:120]}" for r in ratings]
     mistral = MistralService()
     summary = mistral.taste_evolution_summary(lines)
     genre_scores = {}
@@ -43,3 +53,28 @@ def taste_evolution_snapshot(sender, instance, **kwargs):
         genre_scores=genre_scores,
         rating_count_at_snapshot=count,
     )
+
+
+@receiver(post_delete, sender=Rating)
+def invalidate_feed_on_rating_delete(sender, instance, **kwargs):
+    _invalidate_feed_cache_for_user(instance.user_id)
+
+
+@receiver(post_save, sender=Favorite)
+def invalidate_feed_on_favorite_save(sender, instance, **kwargs):
+    _invalidate_feed_cache_for_user(instance.user_id)
+
+
+@receiver(post_delete, sender=Favorite)
+def invalidate_feed_on_favorite_delete(sender, instance, **kwargs):
+    _invalidate_feed_cache_for_user(instance.user_id)
+
+
+@receiver(post_save, sender=NotInterested)
+def invalidate_feed_on_not_interested_save(sender, instance, **kwargs):
+    _invalidate_feed_cache_for_user(instance.user_id)
+
+
+@receiver(post_delete, sender=NotInterested)
+def invalidate_feed_on_not_interested_delete(sender, instance, **kwargs):
+    _invalidate_feed_cache_for_user(instance.user_id)

@@ -24,6 +24,8 @@ export function ProfilePage() {
   const { token, ready } = useAuth()
   const [prefsText, setPrefsText] = useState('')
   const [profile, setProfile] = useState<Awaited<ReturnType<typeof api.fetchProfile>> | null>(null)
+  const [extractBusy, setExtractBusy] = useState(false)
+  const [extractMsg, setExtractMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     if (!token) return
@@ -63,24 +65,53 @@ export function ProfilePage() {
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-base sm:text-lg">Natural-language preferences</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 p-4 pt-0 sm:flex-row sm:p-6 sm:pt-0">
+        <CardContent className="flex flex-col gap-3 p-4 pt-0 sm:p-6 sm:pt-0">
+          {extractMsg && (
+            <p
+              className={
+                extractMsg.type === 'success'
+                  ? 'rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200'
+                  : 'rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200'
+              }
+              role="status"
+            >
+              {extractMsg.text}
+            </p>
+          )}
+          <div className="flex flex-col gap-3 sm:flex-row">
           <Input
             placeholder="Describe mood, characters, themes…"
             value={prefsText}
-            onChange={(e) => setPrefsText(e.target.value)}
+            onChange={(e) => {
+              setPrefsText(e.target.value)
+              if (extractMsg) setExtractMsg(null)
+            }}
             className="min-h-11 flex-1 text-base sm:min-h-10 sm:text-sm"
           />
           <Button
             type="button"
             className="h-11 w-full shrink-0 touch-manipulation sm:h-10 sm:w-auto"
+            disabled={extractBusy || !prefsText.trim()}
             onClick={async () => {
-              await api.nlPreferences(prefsText)
-              const p = await api.fetchProfile()
-              setProfile(p)
+              const text = prefsText.trim()
+              if (!text) return
+              setExtractBusy(true)
+              setExtractMsg(null)
+              try {
+                await api.nlPreferences(text)
+                const p = await api.fetchProfile()
+                setProfile(p)
+                setExtractMsg({ type: 'success', text: 'Preferences extracted and saved.' })
+              } catch {
+                setExtractMsg({ type: 'error', text: 'Could not extract preferences. Please try again.' })
+              } finally {
+                setExtractBusy(false)
+              }
             }}
           >
-            Extract with Mistral
+            {extractBusy ? 'Extracting…' : 'Extract'}
           </Button>
+          </div>
         </CardContent>
       </Card>
 

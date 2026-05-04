@@ -4,6 +4,32 @@ export type MovieEngagementState = {
   not_interested: boolean
 }
 
+export type Paginated<T> = {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
+}
+
+export type FavoriteRow = {
+  id: number
+  movie: Movie
+  created_at: string
+}
+
+export type NotInterestedRow = {
+  id: number
+  movie: Movie
+  created_at: string
+}
+
+export type RatingRow = {
+  id: number
+  movie: Movie
+  stars: number
+  created_at: string
+}
+
 export type Movie = {
   id: number
   title: string

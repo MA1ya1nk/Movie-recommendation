@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from catalog.models import Movie
-from engagement.models import Favorite, NotInterested, Rating
+from engagement.models import Favorite, Interaction, NotInterested, Rating
 from engagement.serializers import (
     FavoriteSerializer,
     InteractionSerializer,
@@ -18,7 +18,16 @@ class RatingViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return Rating.objects.filter(user=self.request.user).select_related("movie")
+        qs = Rating.objects.filter(user=self.request.user).select_related("movie")
+        stars = self.request.query_params.get("stars")
+        if stars is not None:
+            try:
+                v = int(stars)
+                if 1 <= v <= 5:
+                    qs = qs.filter(stars=v)
+            except ValueError:
+                pass
+        return qs.order_by("-created_at")
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -81,3 +90,4 @@ class InteractionViewSet(viewsets.ModelViewSet):
         profile = getattr(self.request.user, "profile", None)
         variant_key = getattr(getattr(profile, "ab_variant", None), "key", "") or ""
         serializer.save(user=self.request.user, ab_variant_key=variant_key)
+

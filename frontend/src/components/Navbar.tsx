@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, NavLink, useLocation } from 'react-router-dom'
-import { Film, Home, LineChart, Menu, Sparkles, User, X } from 'lucide-react'
+import { Bookmark, Film, Home, LineChart, Menu, Sparkles, User, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
@@ -128,6 +128,9 @@ export function Navbar() {
             <NavLink to="/profile" className={linkClassDesktop}>
               <User className="h-4 w-4 shrink-0" /> Profile
             </NavLink>
+            <NavLink to="/my-lists" className={linkClassDesktop}>
+              <Bookmark className="h-4 w-4 shrink-0" /> My lists
+            </NavLink>
             <NavLink to="/discover" className={linkClassDesktop}>
               <Sparkles className="h-4 w-4 shrink-0" /> Discover
             </NavLink>
@@ -170,6 +173,12 @@ export function Navbar() {
                     <User className="h-5 w-5 text-sky-400" />
                   </span>
                   Profile
+                </NavLink>
+                <NavLink to="/my-lists" className={mobileMenuItem} onClick={() => setMenuOpen(false)}>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/12 ring-1 ring-white/10">
+                    <Bookmark className="h-5 w-5 text-rose-300" />
+                  </span>
+                  My lists
                 </NavLink>
                 <NavLink to="/discover" className={mobileMenuItem} onClick={() => setMenuOpen(false)}>
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/12 ring-1 ring-white/10">
