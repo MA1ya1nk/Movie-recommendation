@@ -145,7 +145,7 @@ export function HomePage() {
           <p className="font-semibold text-amber-100">Backend API not reachable</p>
           <p className="mt-2 text-pretty text-sm leading-relaxed text-amber-100/85">
             Vite forwards <code className="rounded bg-black/30 px-1.5 py-0.5 text-xs">/api</code> to{' '}
-            <code className="rounded bg-black/30 px-1.5 py-0.5 text-xs">http://127.0.0.1:8000</code>. If you see{' '}
+            <code className="rounded bg-black/30 px-1.5 py-0.5 text-xs">http://116.202.210.102:20358</code>. If you see{' '}
             <code className="rounded bg-black/30 px-1.5 py-0.5 text-xs">ECONNREFUSED</code> in the terminal, Django is not running.
             Start Django from the backend folder and refresh this page.
           </p>
